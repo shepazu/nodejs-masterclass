@@ -61,11 +61,8 @@ const unifiedServer = (req, res) => {
   // Get the payload, if any
   const decoder = new StringDecoder('utf-8');
   let buffer = '';
-  let i = 0;
   req.on('data', (data) => {
     buffer += decoder.write(data);
-    i++;
-    // console.log(`Request received with this payload: «${buffer}». (${i})`);
   });
   req.on('end', () => {
     buffer += decoder.end();
@@ -105,28 +102,15 @@ const unifiedServer = (req, res) => {
 // Define handlers
 const handlers = {};
 
-// Sample handler
-handlers.ping = (data, callback) => {
-  // callback an HTTP status code
-  callback(200);
-};
-
 // Hello World handler
 handlers.hello = (data, callback) => {
-  // callback an HTTP status code, and a payload object
-  console.log(data);
+  // compose a JSON payload, containing the user's queries, headers, and POST body content (if any)
   let response = {};
   response.query = data.queryStrObj;
   response.headers = data.headers;
-  // for (let k = 0, k_len = this.model.keys.length; k_len > k; ++k) {
-  //   let key = this.model.keys[k];
-  //   let facet = this.model.facets[key];
-  //   // TEMP: let user determine axes
-  //   if ("numeric" === facet.datatype) {
-  //   }
-  // }
   response.content = data.payload;
 
+  // callback an HTTP status code, and the JSON payload
   callback(200, response);
 };
 
@@ -137,6 +121,5 @@ handlers.notFound = (data, callback) => {
 
 // Define a request router
 const router = {
-  'ping': handlers.ping,
   'hello': handlers.hello
 };
