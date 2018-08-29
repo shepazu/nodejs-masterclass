@@ -7,29 +7,29 @@
 // console.log("Uup?");
 
 // Dependencies
-const http = require('http');
-const https = require('https');
-const url = require('url');
-const StringDecoder = require('string_decoder').StringDecoder;
-const fs = require('fs');
-const config = require('./lib/config');
-const handlers = require('./lib/handlers');
-const helpers = require('./lib/helpers');
-// const _data = require('./lib/data');
+const http = require(`http`);
+const https = require(`https`);
+const url = require(`url`);
+const StringDecoder = require(`string_decoder`).StringDecoder;
+const fs = require(`fs`);
+const config = require(`./lib/config`);
+const handlers = require(`./lib/handlers`);
+const helpers = require(`./lib/helpers`);
+// const _data = require(`./lib/data`);
 
 // TESTING
 // TODO: delete this
-// _data.create('test', 'newFile', {'fizz': 'buzz'}, (err) => {
-//   console.log('error:', err);
+// _data.create(`test`, `newFile`, {`fizz`: `buzz`}, (err) => {
+//   console.log(`error:`, err);
 // });
-// _data.create('test', 'newFile', {'fizz': 'buzz'}, (err) => {
-//   console.log('error:', err);
+// _data.create(`test`, `newFile`, {`fizz`: `buzz`}, (err) => {
+//   console.log(`error:`, err);
 // });
-// _data.update('test', 'newFile', {'foo': 'bar'}, (err) => {
-//   console.log('error:', err);
+// _data.update(`test`, `newFile`, {`foo`: `bar`}, (err) => {
+//   console.log(`error:`, err);
 // });
-// _data.delete('test', 'newFile', (err) => {
-//   console.log('error:', err);
+// _data.delete(`test`, `newFile`, (err) => {
+//   console.log(`error:`, err);
 // });
 
 // Instantiating the HTTP server
@@ -67,7 +67,7 @@ const unifiedServer = (req, res, port) => {
 
   //  Get the path from URL
   const path = parsedUrl.pathname;
-  const trimPath = path.replace(/^\/+|\/+$/g, '');
+  const trimPath = path.replace(/^\/+|\/+$/g, ``);
 
   // Get query string parameters as object
   const queryStrObj = parsedUrl.query;
@@ -79,20 +79,20 @@ const unifiedServer = (req, res, port) => {
   const headersObj = req.headers;
 
   // Get the payload, if any
-  const decoder = new StringDecoder('utf-8');
-  let buffer = '';
+  const decoder = new StringDecoder(`utf-8`);
+  let buffer = ``;
   let i = 0;
-  req.on('data', (data) => {
+  req.on(`data`, (data) => {
     buffer += decoder.write(data);
     i++;
     // console.log(`Request received with this payload: «${buffer}». (${i})`);
   });
-  req.on('end', () => {
+  req.on(`end`, () => {
     buffer += decoder.end();
 
     // Choose the handler this request should go to.
     //   If one is not found, use the notFound handler
-    let chosenHandler = typeof(router[trimPath]) !== 'undefined' ? router[trimPath] : handlers.notFound;
+    let chosenHandler = typeof(router[trimPath]) !== `undefined` ? router[trimPath] : handlers.notFound;
 
     // Construct the data object to send to handler
     let data = {
@@ -106,16 +106,16 @@ const unifiedServer = (req, res, port) => {
     // Route the request to the handler specified in the router
     chosenHandler(data, (statusCode, payload) => {
       // Use the status code called back by the handler, or default to 200
-      statusCode = typeof(statusCode) === 'number' ? statusCode : 200;
+      statusCode = typeof(statusCode) === `number` ? statusCode : 200;
 
       // Use the payload called back by the handler, or default to and empty object
-      payload = typeof(payload) === 'object' ? payload : {};
+      payload = typeof(payload) === `object` ? payload : {};
 
       // Convert the payload to a string
       let payloadStr = JSON.stringify(payload);
 
       // Return the response
-      res.setHeader('Content-Type', 'application/json');
+      res.setHeader(`Content-Type`, `application/json`);
       res.writeHead(statusCode);
       res.end(payloadStr);
 
@@ -133,8 +133,8 @@ const unifiedServer = (req, res, port) => {
 
   //
   // return res.status(200).json({
-  //   message: 'success!',
-  //   response: 'success!'
+  //   message: `success!`,
+  //   response: `success!`
   // });
 
 };
@@ -143,5 +143,6 @@ const unifiedServer = (req, res, port) => {
 const router = {
   'ping': handlers.ping,
   'users': handlers.users,
+  'tokens': handlers.tokens,
   'payload': handlers.payload
 };

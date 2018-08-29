@@ -4,20 +4,20 @@
 */
 
 // Dependencies
-const fs = require('fs');
-const path = require('path');
-const helpers = require('./helpers');
+const fs = require(`fs`);
+const path = require(`path`);
+const helpers = require(`./helpers`);
 
 // Container for the module (to be exported)
 const lib = {};
 
 // Base directory of the data folder
-lib.baseDir = path.join(__dirname, '../.data/');
+lib.baseDir = path.join(__dirname, `../.data/`);
 
 // Write data to a file
 lib.create = (dir, file, data, callback) => {
   // Open the file for writing
-  fs.open(`${lib.baseDir}${dir}/${file}.json`, 'wx', (err, fileDescriptor) => {
+  fs.open(`${lib.baseDir}${dir}/${file}.json`, `wx`, (err, fileDescriptor) => {
     if (!err && fileDescriptor) {
       // Convert data to string
       const dataStr = JSON.stringify(data);
@@ -29,15 +29,15 @@ lib.create = (dir, file, data, callback) => {
             if (!err) {
               callback(false);
             } else {
-              callback('Error closing new file');
+              callback(`Error closing new file`);
             }
           });
         } else {
-          callback('Error writing to new file');
+          callback(`Error writing to new file`);
         }
       });
     } else {
-      callback('Could not create new file; it may already exist');
+      callback(`Could not create new file; it may already exist`);
     }
   });
 }
@@ -46,7 +46,7 @@ lib.create = (dir, file, data, callback) => {
 // Read data from a file
 lib.read = (dir, file, callback) => {
   // Open the file for writing
-  fs.readFile(`${lib.baseDir}${dir}/${file}.json`, 'utf8', (err, data) => {
+  fs.readFile(`${lib.baseDir}${dir}/${file}.json`, `utf8`, (err, data) => {
     if (err, data) {
       // parse data into JSON
       let parsedData = helpers.parseJSONtoObject(data);
@@ -63,7 +63,7 @@ lib.read = (dir, file, callback) => {
 // Update data within a file
 lib.update = (dir, file, data, callback) => {
   // Open the file for writing
-  fs.open(`${lib.baseDir}${dir}/${file}.json`, 'r+', (err, fileDescriptor) => {
+  fs.open(`${lib.baseDir}${dir}/${file}.json`, `r+`, (err, fileDescriptor) => {
     if (!err && fileDescriptor) {
       // Convert data to string
       const dataStr = JSON.stringify(data);
@@ -78,19 +78,19 @@ lib.update = (dir, file, data, callback) => {
                 if (!err) {
                   callback(false);
                 } else {
-                  callback('Error closing existing file');
+                  callback(`Error closing existing file`);
                 }
               });
             } else {
-              callback('Error writing to existing file');
+              callback(`Error writing to existing file`);
             }
           });
         } else {
-          callback('Error truncating file');
+          callback(`Error truncating file`);
         }
       });
     } else {
-      callback('Could not open the file for updating; it may not exist yet');
+      callback(`Could not open the file for updating; it may not exist yet`);
     }
   });
 }
@@ -103,7 +103,7 @@ lib.delete = (dir, file, callback) => {
     if (!err) {
       callback(false);
     } else {
-      callback('Error deleting file');
+      callback(`Error deleting file`);
     }
   });
 }
