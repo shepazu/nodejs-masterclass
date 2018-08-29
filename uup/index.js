@@ -12,7 +12,9 @@ const https = require('https');
 const url = require('url');
 const StringDecoder = require('string_decoder').StringDecoder;
 const fs = require('fs');
-const config = require('./config');
+const config = require('./lib/config');
+const handlers = require('./lib/handlers');
+const helpers = require('./lib/helpers');
 // const _data = require('./lib/data');
 
 // TESTING
@@ -98,7 +100,7 @@ const unifiedServer = (req, res, port) => {
       'queryStrObj': queryStrObj,
       'method': method,
       'headers': headersObj,
-      'payload': buffer
+      'payload': helpers.parseJSONtoObject(buffer)
     };
 
     // Route the request to the handler specified in the router
@@ -137,28 +139,9 @@ const unifiedServer = (req, res, port) => {
 
 };
 
-// Define handlers
-const handlers = {};
-
-// Sample handler
-handlers.ping = (data, callback) => {
-  // callback an HTTP status code
-  callback(200);
-};
-
-// Sample handler
-handlers.payload = (data, callback) => {
-  // callback an HTTP status code, and a payload object
-  callback(200, {'name': 'payload handler'});
-};
-
-// 'not found' handler
-handlers.notFound = (data, callback) => {
-  callback(404);
-};
-
 // Define a request router
 const router = {
   'ping': handlers.ping,
+  'users': handlers.users,
   'payload': handlers.payload
 };
