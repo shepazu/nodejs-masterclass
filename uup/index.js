@@ -31,6 +31,11 @@ const helpers = require(`./lib/helpers`);
 // _data.delete(`test`, `newFile`, (err) => {
 //   console.log(`error:`, err);
 // });
+// helpers.sendTwilioSMS('4158375309', 'Is it safe?', (err) => {
+//   console.log(`Error:`, err);
+// });
+
+///////////////////
 
 // Instantiating the HTTP server
 const httpServer = http.createServer( (req, res) => {
@@ -129,14 +134,6 @@ const unifiedServer = (req, res, port) => {
       console.log(`Returning this response: ${statusCode} ${payloadStr} on port ${port}`);
     });
   });
-
-
-  //
-  // return res.status(200).json({
-  //   message: `success!`,
-  //   response: `success!`
-  // });
-
 };
 
 // Define a request router
@@ -144,5 +141,6 @@ const router = {
   'ping': handlers.ping,
   'users': handlers.users,
   'tokens': handlers.tokens,
+  'checks': handlers.checks,
   'payload': handlers.payload
 };
