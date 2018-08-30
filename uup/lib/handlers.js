@@ -6,6 +6,7 @@
 // Dependencies
 const _data = require(`./data`);
 const helpers = require(`./helpers`);
+const config = require(`./config`);
 // const fs = require(`fs`);
 // const path = require(`path`);
 
@@ -61,20 +62,20 @@ handlers._users.post = (data, callback) => {
             if (!err) {
               callback(200);
             } else {
-              callback(500, {'Error': 'Could not create the new user'});
+              callback(500, {'Error': `Could not create the new user`});
             }
           });
         } else {
-          callback(500, {'Error': 'Could not hash the user password'});
+          callback(500, {'Error': `Could not hash the user password`});
         }
 
       } else {
-        callback(400, {'Error': 'A user with that phone number already exists'});
+        callback(400, {'Error': `A user with that phone number already exists`});
       }
     });
   } else {
     // callback an HTTP status code 400: Bad Request
-    callback(400, {'Error': 'Missing required fields'});
+    callback(400, {'Error': `Missing required fields`});
   }
 };
 
@@ -101,16 +102,16 @@ handlers._users.get = (data, callback) => {
             // callback an HTTP status code
             callback(200, userData);
           } else {
-            callback(404, {'Error': 'No user with that phone number exists'});
+            callback(404, {'Error': `No user with that phone number exists`});
           }
         });
       } else {
-        callback(403, {'Error': 'Missing token in headers, or token is invalid'});
+        callback(403, {'Error': `Missing token in headers, or token is invalid`});
       }
-    })
+    });
   } else {
     // callback an HTTP status code 400: Bad Request
-    callback(400, {'Error': 'Missing required field: phone number'});
+    callback(400, {'Error': `Missing required field: phone number`});
   }
 };
 
@@ -158,24 +159,24 @@ handlers._users.put = (data, callback) => {
                   callback(200);
                 } else {
                   console.log(err);
-                  callback(500, {'Error': 'Could not update the user'});
+                  callback(500, {'Error': `Could not update the user`});
                 }
               });
             } else {
-              callback(404, {'Error': 'The specified user does not exists'});
+              callback(404, {'Error': `The specified user does not exists`});
             }
           });
         } else {
-          callback(403, {'Error': 'Missing token in headers, or token is invalid'});
+          callback(403, {'Error': `Missing token in headers, or token is invalid`});
         }
-      })
+      });
     } else {
       // callback an HTTP status code 400: Bad Request
-      callback(400, {'Error': 'Missing fields to update'});
+      callback(400, {'Error': `Missing fields to update`});
     }
   } else {
     // callback an HTTP status code 400: Bad Request
-    callback(400, {'Error': 'Missing required field: phone number'});
+    callback(400, {'Error': `Missing required field: phone number`});
   }
 };
 
@@ -183,7 +184,6 @@ handlers._users.put = (data, callback) => {
 // Users – delete
 // Required data: phone
 // Optional data: none
-// TODO: Clean up (delete) any other data files associated with this user
 handlers._users.delete = (data, callback) => {
   // Check that phone number is valid
   let phone = typeof(data.queryStrObj.phone) === `string` && data.queryStrObj.phone.trim().length === 10 ? data.queryStrObj.phone.trim() : null;
@@ -200,23 +200,47 @@ handlers._users.delete = (data, callback) => {
             // Delete specified user
             _data.delete(`users`, phone, (err) => {
               if (!err) {
-                callback(200);
+                // TODO: Clean up (delete) any other data files associated with this user
+                // Delete each of the checks associated with the user
+                let userChecks = typeof(userData.checks) === `object` && userData.checks instanceof Array ? userData.checks : [];
+                let checksToDelete = userChecks.length;
+                if (checksToDelete > 0) {
+                  let checksDeleted = 0;
+                  let deletionErrors = false;
+                  userChecks.forEach((checkId) => {
+                    _data.delete(`checks`, checkId, (err) => {
+                      if (err) {
+                        deletionErrors = true;
+                      }
+                      checksDeleted++;
+                      if (checksDeleted == checksToDelete) {
+                        if (!deletionErrors) {
+                          callback(200);
+                        } else {
+                          callback(500, {'Error': `Errors encountered while attempting to delete all of the user checks. Not all checks may have been deleted from the system successfully.`});
+                        }
+                      }
+                    });
+                  });
+                } else {
+                  callback(200);
+                }
               } else {
-                callback(500, {'Error': 'Could not delete the specified user'});
+                callback(500, {'Error': `Could not delete the specified user`});
               }
             });
 
           } else {
-            callback(400, {'Error': 'Could not find the specified user'});
+            callback(400, {'Error': `Could not find the specified user`});
           }
         });
       } else {
-        callback(403, {'Error': 'Missing token in headers, or token is invalid'});
+        callback(403, {'Error': `Missing token in headers, or token is invalid`});
       }
-    })
+    });
   } else {
     // callback an HTTP status code 400: Bad Request
-    callback(400, {'Error': 'Missing required field: phone number'});
+    callback(400, {'Error': `Missing required field: phone number`});
   }
 };
 
@@ -266,19 +290,19 @@ handlers._tokens.post = (data, callback) => {
             if (!err) {
               callback(200, tokenObj);
             } else {
-              callback(500, {'Error': 'Could not create the new token'});
+              callback(500, {'Error': `Could not create the new token`});
             }
           });
         } else {
-          callback(400, {'Error': 'Password not match the specified user‘s stored password'});
+          callback(400, {'Error': `Password not match the specified user‘s stored password`});
         }
       } else {
-        callback(400, {'Error': 'Could not find the specified user'});
+        callback(400, {'Error': `Could not find the specified user`});
       }
     });
   } else {
     // callback an HTTP status code 400: Bad Request
-    callback(400, {'Error': 'Missing required field(s)'});
+    callback(400, {'Error': `Missing required field(s)`});
   }
 }
 
@@ -296,12 +320,12 @@ handlers._tokens.get = (data, callback) => {
         // callback an HTTP status code and tokenData payload
         callback(200, tokenData);
       } else {
-        callback(404, {'Error': 'No user with that id exists'});
+        callback(404, {'Error': `No user with that id exists`});
       }
     });
   } else {
     // callback an HTTP status code 400: Bad Request
-    callback(400, {'Error': 'Missing required field: id'});
+    callback(400, {'Error': `Missing required field: id`});
   }
 }
 
@@ -325,19 +349,19 @@ handlers._tokens.put = (data, callback) => {
             if (!err) {
               callback(200);
             } else {
-              callback(500, {'Error': 'Could not update the token expiration'});
+              callback(500, {'Error': `Could not update the token expiration`});
             }
           });
         } else {
-          callback(400, {'Error': 'The token has already expired, and cannot be extended'});
+          callback(400, {'Error': `The token has already expired, and cannot be extended`});
         }
       } else {
-        callback(404, {'Error': 'Specified token does not exist'});
+        callback(404, {'Error': `Specified token does not exist`});
       }
     });
   } else {
     // callback an HTTP status code 400: Bad Request
-    callback(400, {'Error': 'Missing required field(s) or field(s) are invalid'});
+    callback(400, {'Error': `Missing required field(s) or field(s) are invalid`});
   }
 }
 
@@ -345,7 +369,7 @@ handlers._tokens.put = (data, callback) => {
 // Required data:
 // Optional data: none
 handlers._tokens.delete = (data, callback) => {
-  // Check that id number is valid
+  // Check that id is valid
   let id = typeof(data.queryStrObj.id) === `string` && data.queryStrObj.id.trim().length === 20 ? data.queryStrObj.id.trim() : null;
 
   if (id) {
@@ -356,17 +380,17 @@ handlers._tokens.delete = (data, callback) => {
           if (!err) {
             callback(200);
           } else {
-            callback(500, {'Error': 'Could not delete the specified token'});
+            callback(500, {'Error': `Could not delete the specified token`});
           }
         });
 
       } else {
-        callback(400, {'Error': 'Could not find the specified token'});
+        callback(400, {'Error': `Could not find the specified token`});
       }
     });
   } else {
     // callback an HTTP status code 400: Bad Request
-    callback(400, {'Error': 'Missing required field: id'});
+    callback(400, {'Error': `Missing required field: id`});
   }
 }
 
@@ -391,6 +415,267 @@ handlers._tokens.verifyToken = (id, phone, callback) => {
 
 
 
+
+
+// checks handler
+handlers.checks = (data, callback) => {
+  // Determine if the data method has a handler to route the request to
+  const acceptableMethods = [`post`, `get`, `put`, `delete`];
+  if (-1 !== acceptableMethods[data.method]){
+    handlers._checks[data.method](data, callback);
+  } else {
+    // callback an HTTP status code 405: Method Not Allowed
+    callback(405);
+  }
+};
+
+// Checks private methods
+handlers._checks = {};
+
+// Checks – post
+// Required data: protocol, url, method, successCodes, timeoutSeconds
+// Optional data: none
+handlers._checks.post = (data, callback) => {
+  // Validate inputs
+  let protocol = typeof(data.payload.protocol) === `string` && [`http`, `https`].indexOf(data.payload.protocol.toLowerCase()) > -1 ? data.payload.protocol : null;
+  let url = typeof(data.payload.url) === `string` && data.payload.url.trim().length > 0 ? data.payload.url.trim() : null;
+  let method = typeof(data.payload.method) === `string` && [`post`, `get`, `put`, `delete`].indexOf(data.payload.method.toLowerCase()) > -1 ? data.payload.method : null;
+  let successCodes = typeof(data.payload.successCodes) === `object` && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? data.payload.successCodes : null;
+  let timeoutSeconds = typeof(data.payload.timeoutSeconds) === `number` && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1  && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : null;
+
+  if (protocol && url && method && successCodes && timeoutSeconds) {
+    // Only let authenticated users access their own data. Don't let them access anyone else's
+    // Get the token from the headers
+    let token = typeof(data.headers.token) === `string` ? data.headers.token : null;
+    // Look up token
+    _data.read(`tokens`, token, (err, tokenData) => {
+      if (!err && tokenData) {
+        const userPhone = tokenData.phone;
+        // Look up user
+        _data.read(`users`, userPhone, (err, userData) => {
+          if (!err && userData) {
+            let userChecks = typeof(userData.checks) === `object` && userData.checks instanceof Array ? userData.checks : [];
+            // Verify that the user has less than the number of max-checks-per-user
+            if (userChecks.length < config.maxChecks) {
+              // Create a random id for the check
+              const checkId = helpers.createRandomString(20);
+
+              // Create the check object, and include the user's phone
+              const checkObj = {
+                'id': checkId,
+                'userPhone': userPhone,
+                'protocol': protocol,
+                'url': url,
+                'method': method,
+                'successCodes': successCodes,
+                'timeoutSeconds': timeoutSeconds
+              };
+
+              // Store the check
+              _data.create(`checks`, checkId, checkObj, (err) => {
+                if (!err) {
+                  // Add the check id to the user's object
+                  userData.checks = userChecks;
+                  userData.checks.push(checkId);
+
+                  // Save the new user data
+                  _data.update(`users`, userPhone, userData, (err) => {
+                    if (!err) {
+                      // Return the data about the new check to the requester
+                      callback(200, checkObj);
+                    } else {
+                      console.log(err);
+                      callback(500, {'Error': `Could not update the user with the new check`});
+                    }
+                  });
+                } else {
+                  callback(500, {'Error': `Could not create the new check`});
+                }
+              });
+            } else {
+              callback(400, {'Error': `The user already has the maximum number of checks (${config.maxChecks})`});
+            }
+          } else {
+            callback(403);
+          }
+        });
+      } else {
+        callback(403);
+      }
+    });
+  } else {
+    callback(400, {'Error': `Missing required inputs, or input(s) are invalid`});
+  }
+}
+
+
+// Checks – get
+// Required data: id
+// Optional data: none
+handlers._checks.get = (data, callback) => {
+  // Check that id is valid
+  let id = typeof(data.queryStrObj.id) === `string` && data.queryStrObj.id.trim().length === 20 ? data.queryStrObj.id.trim() : null;
+
+  if (id) {
+    _data.read(`checks`, id, (err, checkData) => {
+      if (!err && checkData) {
+        // Only let authenticated users access their own data. Don't let them access anyone else's
+        // Get the token from the headers
+        let token = typeof(data.headers.token) === `string` ? data.headers.token : null;
+        // Verify that the given token from the headers is valid for the id and belongs to the user
+        handlers._tokens.verifyToken(token, checkData.userPhone, (tokenIsValid) => {
+          if (tokenIsValid) {
+            callback(200, checkData);
+          } else {
+            callback(403, {'Error': `Missing token in headers, or token is invalid`});
+          }
+        });
+      } else {
+        callback(404);
+      }
+    });
+  } else {
+    // callback an HTTP status code 400: Bad Request
+    callback(400, {'Error': `Missing required field: id`});
+  }
+}
+
+// Checks – put
+// Required data:
+// Optional data: protocol, url, method, successCodes, timeoutSeconds (at least one must be specified)
+handlers._checks.put = (data, callback) => {
+  // Check for a valid required field
+  let id = typeof(data.payload.id) === `string` && data.payload.id.trim().length === 20 ? data.payload.id.trim() : null;
+
+  // Check for the optional fields
+  let protocol = typeof(data.payload.protocol) === `string` && [`http`, `https`].indexOf(data.payload.protocol.toLowerCase()) > -1 ? data.payload.protocol : null;
+  let url = typeof(data.payload.url) === `string` && data.payload.url.trim().length > 0 ? data.payload.url.trim() : null;
+  let method = typeof(data.payload.method) === `string` && [`post`, `get`, `put`, `delete`].indexOf(data.payload.method.toLowerCase()) > -1 ? data.payload.method : null;
+  let successCodes = typeof(data.payload.successCodes) === `object` && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? data.payload.successCodes : null;
+  let timeoutSeconds = typeof(data.payload.timeoutSeconds) === `number` && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1  && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : null;
+
+  if (id) {
+    if (protocol || url || method || successCodes || timeoutSeconds) {
+      _data.read(`checks`, id, (err, checkData) => {
+        if (!err && checkData) {
+          // Only let authenticated users access their own data. Don't let them access anyone else's
+          // Get the token from the headers
+          let token = typeof(data.headers.token) === `string` ? data.headers.token : null;
+          // Verify that the given token from the headers is valid for the id and belongs to the user
+          handlers._tokens.verifyToken(token, checkData.userPhone, (tokenIsValid) => {
+            if (tokenIsValid) {
+              if (protocol) {
+                checkData.protocol = protocol;
+              }
+
+              if (url) {
+                checkData.url = url;
+              }
+
+              if (method) {
+                checkData.method = method;
+              }
+
+              if (successCodes) {
+                checkData.successCodes = successCodes;
+              }
+
+              if (timeoutSeconds) {
+                checkData.timeoutSeconds = timeoutSeconds;
+              }
+
+              console.log(checkData);
+
+              // Store the new updates
+              _data.update(`checks`, id, checkData, (err) => {
+                if (!err) {
+                  callback(200);
+                } else {
+                  console.log(err);
+                  callback(500, {'Error': `Could not update the check`});
+                }
+              });
+
+            } else {
+              callback(403, {'Error': `Missing token in headers, or token is invalid`});
+            }
+          });
+        } else {
+          callback(400, {'Error': `Check id did not exist`});
+        }
+      });
+    } else {
+      callback(400, {'Error': `Missing required field(s) to update`});
+    }
+  } else {
+    // callback an HTTP status code 400: Bad Request
+    callback(400, {'Error': `Missing required field: id`});
+  }
+}
+
+// Checks – delete
+// Required data:
+// Optional data: none
+handlers._checks.delete = (data, callback) => {
+  // Check that phone number is valid
+  let id = typeof(data.queryStrObj.id) === `string` && data.queryStrObj.id.trim().length === 20 ? data.queryStrObj.id.trim() : null;
+
+  if (id) {
+    _data.read(`checks`, id, (err, checkData) => {
+      if (!err && checkData) {
+        // Only let authenticated users delete their own data. Don't let them delete anyone else's
+        // Get the token from the headers
+        let token = typeof(data.headers.token) === `string` ? data.headers.token : null;
+        // Verify that the given token from the headers is valid for the id
+        handlers._tokens.verifyToken(token, checkData.userPhone, (tokenIsValid) => {
+          if (tokenIsValid) {
+            // Delete specified check
+            _data.delete(`checks`, id, (err) => {
+              if (!err) {
+                _data.read(`users`, checkData.userPhone, (err, userData) => {
+                  if (!err && userData) {
+                    let userChecks = typeof(userData.checks) === `object` && userData.checks instanceof Array ? userData.checks : [];
+
+                    // Remove the check from the user's list of checks
+                    let checkPosition = userChecks.indexOf(id);
+                    if (checkPosition > -1) {
+                      userChecks.splice(checkPosition, 1);
+                      // Re-save the user checks
+                      _data.update(`users`, checkData.userPhone, userData, (err) => {
+                        if (!err) {
+                          callback(200);
+                        } else {
+                          callback(500, {'Error': `Could not update the specified user checks`});
+                        }
+                      });
+
+                    } else {
+                      callback(500, {'Error': `Could not find the check in the list of checks on the user object, so could not remove the check from that list`});
+                    }
+                  } else {
+                    callback(500, {'Error': `Could not find the user who created the check, so could not remove the check from the list of checks on the user object`});
+                  }
+                });
+              } else {
+                callback(500, {'Error': `Could not delete the specified check`});
+              }
+            });
+          } else {
+            callback(403, {'Error': `Missing token in headers, or token is invalid`});
+          }
+        });
+      } else {
+        callback(400, {'Error': `Check id did not exist`});
+      }
+    });
+  } else {
+    // callback an HTTP status code 400: Bad Request
+    callback(400, {'Error': `Missing required field: id`});
+  }
+}
+
+
+
 // Sample handler
 handlers.ping = (data, callback) => {
   // callback an HTTP status code
@@ -400,7 +685,7 @@ handlers.ping = (data, callback) => {
 // Sample handler
 handlers.payload = (data, callback) => {
   // callback an HTTP status code, and a payload object
-  callback(200, {'name': 'payload handler'});
+  callback(200, {'name': `payload handler`});
 };
 
 // 'not found' handler
