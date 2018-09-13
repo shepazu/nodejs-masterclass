@@ -91,6 +91,9 @@ helpers.sendTwilioSMS = (phone, msg, callback) => {
       }
     };
 
+    console.log(payloadObj);
+    console.log(requestDetails);
+
     // Instantiate the request object
     const req = https.request(requestDetails, (res) => {
       // Grab the status of the sent request
