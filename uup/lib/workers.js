@@ -189,6 +189,7 @@ workers.processCheckOutcome = (originalCheckData, checkOutcome) => {
 
   // Log the outcome
   const timeOfCheck = Date.now();
+  // workers.log();
 
   // Update the check data
   let newCheckData = originalCheckData;
