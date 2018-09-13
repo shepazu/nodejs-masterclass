@@ -47,7 +47,7 @@ lib.create = (dir, file, data, callback) => {
 lib.read = (dir, file, callback) => {
   // Open the file for writing
   fs.readFile(`${lib.baseDir}${dir}/${file}.json`, `utf8`, (err, data) => {
-    if (err, data) {
+    if (!err && data) {
       // parse data into JSON
       let parsedData = helpers.parseJSONtoObject(data);
       callback(err, parsedData);
@@ -104,6 +104,23 @@ lib.delete = (dir, file, callback) => {
       callback(false);
     } else {
       callback(`Error deleting file`);
+    }
+  });
+}
+
+
+// List all the items in a directory
+lib.list = (dir, callback) => {
+  // Open the file for writing
+  fs.readdir(`${lib.baseDir}${dir}/`, (err, data) => {
+    if (!err && data && data.length > 0) {
+      let trimFileNames = [];
+      data.forEach((fileName) => {
+        trimFileNames.push(fileName.replace(`.json`,``));
+      });
+      callback(false, trimFileNames);
+    } else {
+      callback(err, data);
     }
   });
 }
