@@ -12,27 +12,30 @@ const url = require(`url`);
 const path = require(`path`);
 const fs = require(`fs`);
 const StringDecoder = require(`string_decoder`).StringDecoder;
+const util = require(`util`);
 const config = require(`./config`);
 const handlers = require(`./handlers`);
 const helpers = require(`./helpers`);
 
+// Create custom debug logger
+const debug = util.debuglog('uup_server');
 
 // TESTING
 // TODO: delete this
 // _data.create(`test`, `newFile`, {`fizz`: `buzz`}, (err) => {
-//   console.log(`error:`, err);
+//   debug(`error:`, err);
 // });
 // _data.create(`test`, `newFile`, {`fizz`: `buzz`}, (err) => {
-//   console.log(`error:`, err);
+//   debug(`error:`, err);
 // });
 // _data.update(`test`, `newFile`, {`foo`: `bar`}, (err) => {
-//   console.log(`error:`, err);
+//   debug(`error:`, err);
 // });
 // _data.delete(`test`, `newFile`, (err) => {
-//   console.log(`error:`, err);
+//   debug(`error:`, err);
 // });
 // helpers.sendTwilioSMS('4158375309', 'Is it safe?', (err) => {
-//   console.log(`Error:`, err);
+//   debug(`Error:`, err);
 // });
 ///////////////////
 
@@ -81,7 +84,7 @@ server.unifiedServer = (req, res, port) => {
   req.on(`data`, (data) => {
     buffer += decoder.write(data);
     i++;
-    // console.log(`Request received with this payload: «${buffer}». (${i})`);
+    // debug(`Request received with this payload: «${buffer}». (${i})`);
   });
   req.on(`end`, () => {
     buffer += decoder.end();
@@ -118,11 +121,17 @@ server.unifiedServer = (req, res, port) => {
       // res.end("Uup?\n");
 
       // Log the request path
-      // console.log(`Full path: ${path}`);
-      // console.log(`Request received on path: ${trimPath}, with method: ${method}, and with query string parameters:`, queryStrObj);
-      // console.log(`Request received with these headers:`, headersObj);
-      // console.log(`Request received with this payload: «${buffer}»`);
-      console.log(`Returning this response: ${statusCode} ${payloadStr} on port ${port}`);
+      // debug(`Full path: ${path}`);
+      // debug(`Request received on path: ${trimPath}, with method: ${method}, and with query string parameters:`, queryStrObj);
+      // debug(`Request received with these headers:`, headersObj);
+      // debug(`Request received with this payload: «${buffer}»`);
+
+      // If the response is 200, print green, otherwise print red
+      let msgFormat = `\x1b[31m%s\x1b[0m`;
+      if (statusCode === 200) {
+        msgFormat = `\x1b[32m%s\x1b[0m`;
+      }
+      debug(msgFormat, `Response for ${method.toUpperCase()} to /${trimPath} on port ${port}: ${statusCode} ${payloadStr}`);
     });
   });
 };
@@ -142,12 +151,12 @@ server.init = () => {
 
   // Start the HTTP server
   server.httpServer.listen(config.httpPort, () => {
-    console.log(`The server is listening on port ${config.httpPort} in ${config.envName} mode over HTTP`);
+    console.log(`\x1b[36m%s\x1b[0m`, `The server is listening on port ${config.httpPort} in ${config.envName} mode over HTTP`);
   });
 
   // Start the HTTPS server
   server.httpsServer.listen(config.httpsPort, () => {
-    console.log(`The server is listening on port ${config.httpsPort} in ${config.envName} mode over HTTPS`);
+    console.log(`\x1b[35m%s\x1b[0m`, `The server is listening on port ${config.httpsPort} in ${config.envName} mode over HTTPS`);
   });
 
 };

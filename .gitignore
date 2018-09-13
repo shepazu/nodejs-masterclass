@@ -1,5 +1,11 @@
 _ignore/
 source/
 uup/lib/config.js
+uup/https
 uup/.data
 uup/.logs
+pizzapp/
+pizzapp/lib/config.js
+pizzapp/https
+pizzapp/.data
+pizzapp/.logs
