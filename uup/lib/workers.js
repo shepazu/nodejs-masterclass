@@ -11,21 +11,14 @@ const fs = require(`fs`);
 const http = require(`http`);
 const https = require(`https`);
 const url = require(`url`);
-const _data = require(`./data`);
 const helpers = require(`./helpers`);
+const _data = require(`./data`);
+const _logs = require(`./logs`);
 // const config = require(`./config`);
 // const handlers = require(`./handlers`);
 
 // Instantiating the workers module object
 const workers = {};
-
-// Timer to execute the worker process once per minute
-workers.loop = () => {
-  setInterval(() => {
-    workers.gatherAllChecks();
-  }, 1000 * 60);
-};
-
 
 // Look up all checks, get their data, send to a validator
 workers.gatherAllChecks = () => {
@@ -189,7 +182,7 @@ workers.processCheckOutcome = (originalCheckData, checkOutcome) => {
 
   // Log the outcome
   const timeOfCheck = Date.now();
-  // workers.log();
+  workers.log(originalCheckData, checkOutcome, state, alertWarranted, timeOfCheck);
 
   // Update the check data
   let newCheckData = originalCheckData;
@@ -226,6 +219,82 @@ workers.alertUserToStatusChange = (newCheckData) => {
 }
 
 
+workers.log = (originalCheckData, checkOutcome, state, alertWarranted, timeOfCheck) => {
+  // Form the log data
+  const logData = {
+    'check': originalCheckData,
+    'outcome': checkOutcome,
+    'state': state,
+    'alert': alertWarranted,
+    'time': timeOfCheck
+  };
+
+  // Convert log to a string
+  let logStr = JSON.stringify(logData);
+
+  // Determine log file name
+  const logFileName = originalCheckData.id;
+
+  // Append the log string to the file
+  _logs.append(logFileName, logStr, (err) => {
+    if (!err) {
+      console.log(`Success: logged to file.`);
+    } else {
+      console.log(`Error: logging to file failed.`);
+
+    }
+  });
+}
+
+// Timer to execute the worker process once per minute
+workers.loop = () => {
+  setInterval(() => {
+    workers.gatherAllChecks();
+  }, 1000 * 60);
+};
+
+
+// Rotate (compress) the log files
+workers.rotateLogs = () => {
+  // List all the non-compressed log files
+  _logs.list(false, (err, logs) => {
+    if (!err && logs && logs.length > 0) {
+      logs.forEach( (logName) => {
+        // Compress the data to a different file
+        const logId = logName.replace(`.log`, ``);
+        const newFileId = `${logId}-${Date.now()}`;
+
+        // Compress the log data
+        _logs.compress(logId, newFileId, (err) => {
+          if (!err) {
+            // Truncate the log
+            _logs.truncate(logId, (err) => {
+              if (!err) {
+                console.log(`Success truncating the log file`);
+              } else {
+                console.log(`Error truncating the log file: ${logId}, ${err}`);
+              }
+            });
+          } else {
+            console.log(`Error: could not compress one of the log files: ${logId}, ${err}`);
+          }
+        });
+      });
+    } else {
+      console.log(`Error: could not find any logs to rotate`);
+    }
+  });
+}
+
+// Timer to execute the log-rotation process once per day
+workers.logRotationLoop = () => {
+  setInterval(() => {
+    workers.rotateLogs();
+  }, 1000 * 60 * 60 * 24);
+};
+
+
+
 // Init workers
 workers.init = () => {
   // Execute all of the checks immediately
@@ -233,6 +302,12 @@ workers.init = () => {
 
   // Call the loop so the checks will execute periodically, to keep the server process alive
   workers.loop();
+
+  // Compress all the logs immediately
+  workers.rotateLogs();
+
+  // Call the compression loop to schedule later compression of the logs
+  workers.logRotationLoop();
 };
 
 

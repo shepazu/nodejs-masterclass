@@ -2,4 +2,4 @@ _ignore/
 source/
 uup/lib/config.js
 uup/.data
-uup/_data
+uup/.logs
