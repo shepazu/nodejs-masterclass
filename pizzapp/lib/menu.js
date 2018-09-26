@@ -30,6 +30,7 @@ lib.read = (callback) => {
 
 
 // Verify that the toppings are available
+// NOTE: this simply checks a static list, but might be repurposed to check active stock
 lib.validateToppings = (toppings, callback) => {
   toppings = typeof(toppings) === `object` && toppings instanceof Array ? toppings : null;
   if (toppings) {
@@ -56,6 +57,73 @@ lib.validateToppings = (toppings, callback) => {
       }
     });
   }
+};
+
+
+// Calculate price of order
+lib.calculatePrice_old = (orderData, callback) => {
+  orderData = typeof(orderData) ===`object` && orderData !== null ? orderData : {};
+  orderData.size = typeof(orderData.size) ===`string` && [`small`, `medium`, `large`].includes(orderData.size) ? orderData.size : null;
+  orderData.count = typeof(orderData.count) ===`number` && orderData.count % 1 === 0 && orderData.count >= 1 ? orderData.count : null;
+  orderData.toppings = typeof(orderData.toppings) === `object` && orderData.toppings instanceof Array ? orderData.toppings : null;
+
+  if (orderData.id &&
+    orderData.count &&
+    orderData.size &&
+    orderData.toppings) {
+    // load menu
+    lib.read((err, menu) => {
+      if (!err && menu ){
+        // get base prices
+        const pizza = menu.pizzas[orderData.size];
+        const basePrice = +pizza.price.replace(`$`,``);
+        const perTopping = +pizza.toppings.replace(`$`,``);
+
+        // calculate total prices
+        const toppingPrice = helpers.multiplyFloats([perTopping, orderData.toppings.length]);
+        const pizzaPrice = helpers.addFloats([basePrice, toppingPrice]);
+        const totalPrice = helpers.multiplyFloats([pizzaPrice, orderData.count]);
+
+        callback(false, totalPrice);
+      } else {
+        callback({error: `could not load menu`});
+      }
+    });
+  } else {
+    callback({error: `missing parameters`});
+  }
+};
+
+
+// Calculate price of order
+lib.calculatePrice = async (orderData, callback) => {
+    lib.read((err, menu) => {
+      if (!err && menu ){
+        // get base prices
+        const pizza = menu.pizzas[orderData.size];
+        const basePrice = +pizza.price.replace(`$`,``) * 100;
+        const perTopping = +pizza.toppings.replace(`$`,``) * 100;
+
+        // calculate total prices
+        const toppingPrice = orderData.toppings.length * perTopping;
+        const pizzaPrice = basePrice + toppingPrice;
+        const totalPrice = (pizzaPrice * orderData.count) / 100;
+
+        // get base prices
+        // const pizza = menu.pizzas[orderData.size];
+        // const basePrice = +pizza.price.replace(`$`,``);
+        // const perTopping = +pizza.toppings.replace(`$`,``);
+        //
+        // // calculate total prices
+        // const toppingPrice = helpers.multiplyFloats([perTopping, orderData.toppings.length]);
+        // const pizzaPrice = helpers.addFloats([basePrice, toppingPrice]);
+        // const totalPrice = helpers.multiplyFloats([pizzaPrice, orderData.count]);
+
+        callback(false, totalPrice);
+      } else {
+        callback({error: `could not load menu`});
+      }
+    });
 };
 
 

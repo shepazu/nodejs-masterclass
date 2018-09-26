@@ -63,6 +63,23 @@ helpers.createRandomString = (strLength) => {
 
 
 
+// Add floating points for money
+helpers.addFloats = (vals) => {
+  return vals.reduce((a, b) => {
+    ((a * 10) + (b * 10)) / 10;
+  });
+};
+
+
+// Multiply floating points for money
+helpers.multiplyFloats = (vals) => {
+  return vals.reduce((a, b) => {
+    (((a * 10) * (b * 10)) / 10) //.toFixed;
+  });
+};
+
+
+
 // Validate email address
 helpers.validateEmail = (email) => {
   if (typeof(email) === `string`) {
@@ -79,8 +96,8 @@ helpers.validateEmail = (email) => {
 
 // Send an payment request via Stripe
 helpers.processPayment = async (email, orderDetails, callback) => {
-  console.log(`processPayment`);
-  console.log(email, orderDetails);
+  // console.log(`processPayment`);
+  // // console.log(email, orderDetails);
   email = helpers.validateEmail(email);
   // orderDetails = typeof(orderDetails) === `string` && orderDetails.trim().length > 0  && orderDetails.trim().length <= 1600 ? orderDetails.trim() : null;
 
@@ -89,7 +106,7 @@ helpers.processPayment = async (email, orderDetails, callback) => {
       currency: 'usd',
       amount: orderDetails.charge * 100, // amount in cents
       description: `Pizzapp charges for order# ${orderDetails.id}`,
-      source: `tok_visa`
+      source: orderDetails.customerData.creditCard.auth //`tok_visa`
     });
       // source: orderDetails.creditCard
 
@@ -105,11 +122,11 @@ helpers.processPayment = async (email, orderDetails, callback) => {
         'Authorization': 'Bearer '+ config.stripe.secret
       }
     };
-    console.log(stripePostData, stripeOptions);
+    // console.log(stripePostData, stripeOptions);
 
     // send request to Stripe, pass outcome back to processor
     const res = await helpers.remoteAPIRequest(stripeOptions, stripePostData);
-    console.log(res);
+    // console.log(res);
     callback(false, res);
   } else {
     callback({error: `Missing required fields`});
@@ -128,7 +145,7 @@ helpers.sendReceiptEmail = async (email, orderDetails, callback) => {
       from: 'Pizzapp <fizz@samples.mailgun.org>',
       to: email,
       subject: `Receipt for the orderId ${orderDetails.id}`,
-      text: `Thank you for ordering from Pizzapp!\n\n${orderDetails.summary}\nYour order has been paid with credit card ending in ${orderDetails.creditCard.number.slice(-4)}.`
+      text: `Thank you for ordering from Pizzapp!\n\n${orderDetails.summary}\n\nYour order has been paid with credit card ending in ${orderDetails.customerData.creditCard.number.slice(-4)}.`
     });
 
     const mailgunOptions = {
@@ -147,7 +164,7 @@ helpers.sendReceiptEmail = async (email, orderDetails, callback) => {
 
     // send request to MailGun, pass outcome back to processor
     const mailStatus = await helpers.remoteAPIRequest(mailgunOptions, mailgunPostData);
-    console.log(mailStatus);
+    // console.log(mailStatus);
     callback(false, mailStatus);
   } else {
     callback({error: `Missing required fields`});
@@ -159,7 +176,7 @@ helpers.sendReceiptEmail = async (email, orderDetails, callback) => {
 
 // Send an payment request via Stripe
 helpers.processPayment_old = async (email, orderTotal, callback) => {
-  console.log(`processPayment`);
+  // console.log(`processPayment`);
   return(false, {});
   // return Promise.resolve(false, {});
   return new Promise( (resolve, reject) => {
@@ -206,7 +223,7 @@ helpers.processPayment_old = async (email, orderTotal, callback) => {
   };
 
   const mailStatus = await helpers.remoteAPIRequest(mailgunOptions, mailgunPostData);
-  console.log(mailStatus);
+  // console.log(mailStatus);
   */
   // phone = typeof(phone) === `string` && phone.trim().length === 10 ? phone.trim() : null;
   // msg = typeof(msg) === `string` && msg.trim().length > 0  && msg.trim().length <= 1600 ? msg.trim() : null;
@@ -235,8 +252,8 @@ helpers.processPayment_old = async (email, orderTotal, callback) => {
   //     }
   //   };
   //
-  //   console.log(payloadObj);
-  //   console.log(requestDetails);
+  //   // console.log(payloadObj);
+  //   // console.log(requestDetails);
   //
   //   // Instantiate the request object
   //   const req = https.request(requestDetails, (res) => {
@@ -274,7 +291,7 @@ helpers.remoteAPIRequest = async (options, postData)  => {
         response = chunk;
       });
       res.on('end', () => {
-        console.log(typeof response);
+        // console.log(typeof response);
         try {
           resolve(JSON.parse(response));
         } catch (err) {
@@ -284,7 +301,7 @@ helpers.remoteAPIRequest = async (options, postData)  => {
     });
 
     req.on('error', (e) => {
-      console.log(e);
+      // console.log(e);
       reject(formatResponse(400, `problem with request: ${e.message}`));
     });
 

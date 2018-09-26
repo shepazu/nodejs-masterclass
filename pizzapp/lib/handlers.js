@@ -39,7 +39,7 @@ handlers._users.post = (data, callback) => {
   let password = typeof(data.payload.password) === `string` && data.payload.password.trim().length > 0 ? data.payload.password.trim() : null;
   let tosAgreement = typeof(data.payload.tosAgreement) === `boolean` && data.payload.tosAgreement === true ? true : false;
 
-  console.log(email, username, streetAddress, password, tosAgreement);
+  // console.log(email, username, streetAddress, password, tosAgreement);
 
   if (email && username && streetAddress && password && tosAgreement) {
     // Make sure that the user doesn't already exist
@@ -604,7 +604,7 @@ handlers._orders.put = (data, callback) => {
                 orderData.toppings = toppings;
               }
 
-              console.log(orderData);
+              // console.log(orderData);
 
               // Store the new updates
               _data.update(`orders`, id, orderData, (err) => {
@@ -720,74 +720,91 @@ handlers._checkout = {};
 // Optional data: none
 handlers._checkout.post = async (data, callback) => {
   // Only let authenticated users access their own data. Don't let them access anyone else's
-  // Get the token from the headers
+  // Get the token and email from the headers
   let token = typeof(data.headers.token) === `string` ? data.headers.token : null;
-  // Verify that the given token from the headers is valid for the email address
-  handlers._tokens.verifyToken(token, email, (tokenIsValid) => {
-    if (tokenIsValid) {
-      // Look up user
-      _data.read(`users`, email, async (err, userData) => {
-        if (!err && userData) {
-          // Concatenate all orders in the shopping cart, calculate price, and create a receipt
-          // cart.init();
+  // let email = helpers.validateEmail(data.headers.email);
+  let email = helpers.validateEmail(data.payload.email);
+  let payAuthToken = typeof(data.payload.payAuthToken) === `string` && data.payload.payAuthToken.trim().length > 0 ? data.payload.payAuthToken.trim() : null;
 
-          // TODO: require that user is checked in
-          const userEmail = `dev@fizz.studio`; // TODO: get email
-          // Compile all active orders from cart
+  if (token && email && payAuthToken) {
+    // Verify that the given token from the headers is valid for the email address
+    handlers._tokens.verifyToken(token, email, (tokenIsValid) => {
+      if (tokenIsValid) {
+        // Look up user
+        _data.read(`users`, email, async (err, userData) => {
+          if (!err && userData) {
+            // Concatenate all orders in the shopping cart, calculate price, and create a receipt
+            cart.processCart(userData.orders, async (err, cartData) => {
+              if (!err && cartData) {
+                console.log(`cartData`, cartData);
+                // TODO: require that user is checked in
+                // const userEmail = `dev@fizz.studio`; // TODO: get email
+                // Compile all active orders from cart
 
-          // Calculate total charge
-          let totalCharge = 20;
-          let summary = `1 large pizza with mushrooms and olives`;
-          let creditCard = {
-            object: 'card',
-            number: '4242424242424242',
-            exp_month: '12',
-            exp_year: '2020',
-            cvc: '123'
-          };
+                // Create cart charge info
+                let summary = `${cartData.orderSummaries.join('\n')}\n\nTotal: $${cartData.totalPrice}`;
+                let creditCard = {
+                  object: 'card',
+                  number: '4242424242424242',
+                  exp_month: '12',
+                  exp_year: '2020',
+                  cvc: '123',
+                  auth: payAuthToken
+                };
 
-          // Email receipt
-          const orderDetails = {
-            id: `some-id-todo`,
-            charge: totalCharge,
-            summary,
-            creditCard
-          };
+                // Email receipt
+                const orderDetails = {
+                  id: `${userData.email}-${helpers.createRandomString(20)}`,
+                  customerData: {
+                    name: userData.username,
+                    email: userData.email,
+                    address: userData.streetAddress,
+                    creditCard
+                  },
+                  charge: +cartData.totalPrice,
+                  summary
+                };
 
-          // Charge credit card
-          await helpers.processPayment(userEmail, orderDetails, async (err, data) => {
-            console.log(`back in _checkout.post`);
-            console.log(err, data);
-            if (!err && data) {
-              // move all orders to past order archive, include email id in archive
+                // Charge credit card
+                await helpers.processPayment(email, orderDetails, async (err, paymentData) => {
+                  // console.log(`back in _checkout.post`);
+                  // console.log(err, data);
+                  if (!err && paymentData) {
+                    // move all orders to past order archive, include email id in archive
+                    // console.log(paymentData.id);
+                    orderDetails.paymentId = paymentData.id;
 
-              await helpers.sendReceiptEmail(userEmail, orderDetails, (err, data) => {
-                if (!err && data) {
-                  // move all orders to past order archive, include email id in archive
-                  console.log(data.id);
-                } else {
-                  callback(424, {'Error': `Problem sending email receipt`});
-                }
-              });
-            } else {
-              callback(402, {'Error': `Problem processing credit card`});
-            }
-          });
-
-        } else {
-          callback(404, {'Error': `No user with that email address exists`});
-        }
-      });
-    } else {
-      callback(403, {'Error': `Missing token in headers, or token is invalid`});
-    }
-  });
-
-
-
-
-  // helpers.processPayment(`dev@fizz.studio`)
-  // callback(200);
+                    await helpers.sendReceiptEmail(email, orderDetails, (err, receiptData) => {
+                      if (!err && receiptData) {
+                        // move all orders to past order archive, include email id in archive
+                        // console.log(cartData);
+                        // console.log(receiptData.id);
+                        orderDetails.receiptId = receiptData.id;
+                        console.log(orderDetails);
+                        callback(200, orderDetails.summary);
+                      } else {
+                        callback(424, {'Error': `Problem sending email receipt`});
+                      }
+                    });
+                  } else {
+                    callback(402, {'Error': `Problem processing credit card`});
+                  }
+                });
+              } else {
+                console.log(err);
+              }
+            });
+          } else {
+            callback(404, {'Error': `No user with that email address exists`});
+          }
+        });
+      } else {
+        callback(403, {'Error': `Missing token in headers, or token is invalid`});
+      }
+    });
+  } else {
+    callback(403, {'Error': `Missing required fields`});
+  }
 }
 
 
