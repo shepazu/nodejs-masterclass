@@ -1,14 +1,14 @@
-= Homework Assignment #2
+# Homework Assignment #2
 
 This is the second of several homework assignments you'll receive in this course. In order to receive your certificate of completion (at the end of this course) you must complete all the assignments and receive a passing grade.
 
-== How to Turn It In:
+## How to Turn It In:
 
 1. Create a public github repo for this assignment.
 2. Create a new post in the Facebook Group  and note "Homework Assignment #2" at the top.
 3. In that thread, discuss what you have built, and include the link to your Github repo.
 
-== The Assignment (Scenario):
+## The Assignment (Scenario):
 
 You are building the API for a pizza-delivery company. Don't worry about a frontend, just build the API. Here's the spec from your project manager:
 

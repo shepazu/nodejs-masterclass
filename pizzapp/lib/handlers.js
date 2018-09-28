@@ -4,12 +4,12 @@
 */
 
 // Dependencies
+const config = require(`./config`);
+const helpers = require(`./helpers`);
 const _data = require(`./data`);
 const _email = require(`./email`);
 const _menu = require(`./menu`);
-const helpers = require(`./helpers`);
-const config = require(`./config`);
-const cart = require(`./cart`);
+const _cart = require(`./cart`);
 
 // Container for the module (to be exported)
 const handlers = {};
@@ -734,7 +734,7 @@ handlers._checkout.post = async (data, callback) => {
         _data.read(`users`, email, async (err, userData) => {
           if (!err && userData) {
             // Concatenate all orders in the shopping cart, calculate price, and create a receipt
-            cart.processCart(userData.orders, async (err, cartData) => {
+            _cart.processCart(userData.orders, async (err, cartData) => {
               if (!err && cartData) {
                 console.log(`cartData`, cartData);
                 // TODO: require that user is checked in
@@ -772,16 +772,23 @@ handlers._checkout.post = async (data, callback) => {
                   if (!err && paymentData) {
                     // move all orders to past order archive, include email id in archive
                     // console.log(paymentData.id);
+                    // Add payment id to orderDetails for archiving
                     orderDetails.paymentId = paymentData.id;
 
                     await helpers.sendReceiptEmail(email, orderDetails, (err, receiptData) => {
                       if (!err && receiptData) {
-                        // move all orders to past order archive, include email id in archive
-                        // console.log(cartData);
-                        // console.log(receiptData.id);
+                        // Add email receipt id to orderDetails for archiving
                         orderDetails.receiptId = receiptData.id;
                         console.log(orderDetails);
-                        callback(200, orderDetails.summary);
+
+                        // move all orders to past order archive, include email id in archive
+                        _cart.archiveOrders(userData, orderDetails, (err) => {
+                          if (!err) {
+                            callback(200);
+                          } else {
+                            callback(424, {'Error': `Problem archiving orders in cart`});
+                          }
+                        });
                       } else {
                         callback(424, {'Error': `Problem sending email receipt`});
                       }

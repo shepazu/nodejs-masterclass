@@ -108,34 +108,46 @@ cart.processOrder = async (orderData, callback) => {
 };
 
 
-// Rotate (compress) the order files, with the ids of the payment and email receipt, for future reference by the customer
-cart.archiveOrders = () => {
-  // List all the non-compressed log files
-  _logs.list(false, (err, logs) => {
-    if (!err && logs && logs.length > 0) {
-      logs.forEach( (logName) => {
-        // Compress the data to a different file
-        const logId = logName.replace(`.log`, ``);
-        const newFileId = `${logId}-${Date.now()}`;
-
-        // Compress the log data
-        _logs.compress(logId, newFileId, (err) => {
-          if (!err) {
-            // Truncate the log
-            _logs.truncate(logId, (err) => {
-              if (!err) {
-                debug(`Success truncating the log file`);
-              } else {
-                debug(`Error truncating the log file: ${logId}, ${err}`);
-              }
-            });
-          } else {
-            debug(`Error: could not compress one of the log files: ${logId}, ${err}`);
+// Delete the order files, and create an archived order with the ids of the payment and email receipt, for future reference by the customer
+cart.archiveOrders = (userData, orderDetails, callback) => {
+  // Store the archived order in a JSON file
+  _data.create(`orders`, orderDetails.id, orderDetails, (err) => {
+    if (!err) {
+      let undeletedOrders = [];
+      // Loop through all orders to delete old order files, to empty the cart
+      while (userData.orders.length) {
+        // Remove order from user's list of orders
+        let order = userData.orders.pop();
+        // Delete order file
+        _data.delete(`orders`, order, (err) => {
+          // if the order can't be deleted, add to list of undeleted orders
+          if (err) {
+            undeletedOrders.push(order)
           }
         });
+      }
+
+      // Create status message for file deletion operation
+      let statusMsg = ``;
+      if (undeletedOrders.length) {
+        statusMsg = `Could not delete the specified orders: ${undeletedOrders.join(',')}.`;
+      }
+
+      // update user information
+      // TEMP: assume we don't want to lose undeleted orders at thsi point
+      userData.orders = undeletedOrders;
+
+      // Save the new user data
+      _data.update(`users`, userData.email, userData, (err) => {
+        if (!err) {
+          // Return the data about the new order to the requester
+          callback(false);
+        } else {
+          callback({'Error': `Could not update the user with the new order. ${statusMsg}`});
+        }
       });
     } else {
-      debug(`Error: could not find any logs to rotate`);
+      callback({'Error': `Could not create the archived order`});
     }
   });
 }
