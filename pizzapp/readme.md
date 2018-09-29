@@ -1,12 +1,18 @@
 # Homework Assignment #2
 
-This is the second of several homework assignments you'll receive in this course. In order to receive your certificate of completion (at the end of this course) you must complete all the assignments and receive a passing grade.
+This is the second homework assignment for the NodeJS Masterclass, for the section 'Building a RESTful API'.
 
-## How to Turn It In:
+This is based on the course code, with slight modifications to create a "shopping cart" composed of a set of "orders" (forked from the "checks" functionality) placed by an authenticated user. The body of an order might look like this:
 
-1. Create a public github repo for this assignment.
-2. Create a new post in the Facebook Group  and note "Homework Assignment #2" at the top.
-3. In that thread, discuss what you have built, and include the link to your Github repo.
+```
+{
+  "pizzaSize": "small",
+  "pizzaCount": 2,
+  "toppings": [ "onions", "sausage", "mushrooms", "bacon" ]
+}
+```
+
+This also includes helpers to process payments via Stripe, compose and send email receipts via MailGun, a generalized email format verification method, and a module to handle the cart, including compiling a shopping cart from multiple orders, calculating the price, summarizing each order, and finally archiving past orders.
 
 ## The Assignment (Scenario):
 
@@ -29,4 +35,87 @@ You are building the API for a pizza-delivery company. Don't worry about a front
 6. When an order is placed, you should email the user a receipt. You should integrate with the sandbox of Mailgun.com for this. Note: Every Mailgun account comes with a sandbox email account domain (whatever@sandbox123.mailgun.org) that you can send from by default. So, there's no need to setup any DNS for your domain for this task https://documentation.mailgun.com/en/latest/faqs.html#how-do-i-pick-a-domain-name-for-my-mailgun-account
 - [x] send receipt to user
 
-This is an open-ended assignment. You may take any direction you'd like to go with it, as long as your project includes the requirements. It can include anything else you wish as well.
+## Handlers
+### `/users`
+
+`/post`
+- Required data: username, email, and streetAddress, password, tosAgreement
+- Optional data: none
+- Parameters: `data`, `callback`
+
+`/get`
+- Required data: email
+- Optional data: none
+- Parameters: `data`, `callback`
+
+`/put`
+- Required data: email
+- Optional data: username, streetAddress, password (at least one must be specified)
+- Parameters: `data`, `callback`
+
+`/delete`
+- Required data: email
+- Optional data: none
+- Parameters: `data`, `callback`
+
+### `/tokens`
+
+`/post`
+- Required data: email, password
+- Optional data: none
+- Parameters: `data`, `callback`
+
+`/get`
+- Required data: id
+- Optional data: none
+- Parameters: `data`, `callback`
+
+`/put`
+- Required data: id, extend
+- Optional data: none
+- Parameters: `data`, `callback`
+
+`/delete`
+- Required data:
+- Optional data: none
+- Parameters: `data`, `callback`
+
+`/verifyToken`: verify that a given token id is currently valid for a given user
+- Required data:
+- Optional data: none
+- Parameters: `id`, `email`, `callback`
+
+### `/menu`
+`/get`: returns a JSON file of the menu, with available sizes, prices, and toppings
+- Required data: none
+- Optional data: none
+- Parameters: `data`, `callback`
+
+### `/orders`
+`/post`
+- Required data: pizzaSize, pizzaCount, toppings
+- Optional data: none
+- Parameters: `data`, `callback`
+
+`/get`
+- Required data: id
+- Optional data: none
+- Parameters: `data`, `callback`
+
+`/put`
+- Required data: id
+- Optional data: pizzaSize, pizzaCount, toppings (at least one must be specified)
+- Parameters: `data`, `callback`
+
+`/delete`
+- Required data:
+- Optional data: none
+- Parameters: `data`, `callback`
+
+### `/checkout`
+`/post`
+- Required data: token (header), email address (body), payAuthToken (body)
+- Optional data: none
+- Parameters: `data`, `callback`
+
+### `/notFound`
