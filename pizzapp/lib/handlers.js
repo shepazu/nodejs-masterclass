@@ -708,7 +708,7 @@ handlers.checkout = (data, callback) => {
 handlers._checkout = {};
 
 // checkout – post
-// Required data: token, email address
+// Required data: token (header), email address (body), payAuthToken (body)
 // Optional data: none
 handlers._checkout.post = async (data, callback) => {
   // Only let authenticated users access their own data. Don't let them access anyone else's
