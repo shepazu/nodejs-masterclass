@@ -7,7 +7,6 @@
 const config = require(`./config`);
 const helpers = require(`./helpers`);
 const _data = require(`./data`);
-const _email = require(`./email`);
 const _menu = require(`./menu`);
 const _cart = require(`./cart`);
 
@@ -39,7 +38,6 @@ handlers._users.post = (data, callback) => {
   let password = typeof(data.payload.password) === `string` && data.payload.password.trim().length > 0 ? data.payload.password.trim() : null;
   let tosAgreement = typeof(data.payload.tosAgreement) === `boolean` && data.payload.tosAgreement === true ? true : false;
 
-  // console.log(email, username, streetAddress, password, tosAgreement);
 
   if (email && username && streetAddress && password && tosAgreement) {
     // Make sure that the user doesn't already exist
@@ -159,7 +157,6 @@ handlers._users.put = (data, callback) => {
                 if (!err) {
                   callback(200);
                 } else {
-                  console.log(err);
                   callback(500, {'Error': `Could not update the user`});
                 }
               });
@@ -512,7 +509,6 @@ handlers._orders.post = (data, callback) => {
                         // Return the data about the new order to the requester
                         callback(200, orderObj);
                       } else {
-                        console.log(err);
                         callback(500, {'Error': `Could not update the user with the new order`});
                       }
                     });
@@ -573,7 +569,6 @@ handlers._orders.get = (data, callback) => {
 // Required data: id
 // Optional data: pizzaSize, pizzaCount, toppings (at least one must be specified)
 handlers._orders.put = (data, callback) => {
-  // TODO: require that user is checked in
   // Check for a valid required field
   let id = typeof(data.payload.id) === `string` && data.payload.id.trim().length === 20 ? data.payload.id.trim() : null;
 
@@ -604,14 +599,12 @@ handlers._orders.put = (data, callback) => {
                 orderData.toppings = toppings;
               }
 
-              // console.log(orderData);
 
               // Store the new updates
               _data.update(`orders`, id, orderData, (err) => {
                 if (!err) {
                   callback(200);
                 } else {
-                  console.log(err);
                   callback(500, {'Error': `Could not update the order`});
                 }
               });
@@ -637,7 +630,6 @@ handlers._orders.put = (data, callback) => {
 // Required data:
 // Optional data: none
 handlers._orders.delete = (data, callback) => {
-  // TODO: require that user is checked in
   // Check that order id is valid
   let id = typeof(data.queryStrObj.id) === `string` && data.queryStrObj.id.trim().length === 20 ? data.queryStrObj.id.trim() : null;
 
@@ -722,7 +714,6 @@ handlers._checkout.post = async (data, callback) => {
   // Only let authenticated users access their own data. Don't let them access anyone else's
   // Get the token and email from the headers
   let token = typeof(data.headers.token) === `string` ? data.headers.token : null;
-  // let email = helpers.validateEmail(data.headers.email);
   let email = helpers.validateEmail(data.payload.email);
   let payAuthToken = typeof(data.payload.payAuthToken) === `string` && data.payload.payAuthToken.trim().length > 0 ? data.payload.payAuthToken.trim() : null;
 
@@ -736,13 +727,10 @@ handlers._checkout.post = async (data, callback) => {
             // Concatenate all orders in the shopping cart, calculate price, and create a receipt
             _cart.processCart(userData.orders, async (err, cartData) => {
               if (!err && cartData) {
-                console.log(`cartData`, cartData);
-                // TODO: require that user is checked in
-                // const userEmail = `dev@fizz.studio`; // TODO: get email
-                // Compile all active orders from cart
-
                 // Create cart charge info
                 let summary = `${cartData.orderSummaries.join('\n')}\n\nTotal: $${cartData.totalPrice}`;
+
+                // NOTE: Stripe would actually abstract this away, but I'm keeping it for verisimilitude
                 let creditCard = {
                   object: 'card',
                   number: '4242424242424242',
@@ -767,11 +755,8 @@ handlers._checkout.post = async (data, callback) => {
 
                 // Charge credit card
                 await helpers.processPayment(email, orderDetails, async (err, paymentData) => {
-                  // console.log(`back in _checkout.post`);
-                  // console.log(err, data);
                   if (!err && paymentData) {
                     // move all orders to past order archive, include email id in archive
-                    // console.log(paymentData.id);
                     // Add payment id to orderDetails for archiving
                     orderDetails.paymentId = paymentData.id;
 
@@ -779,7 +764,6 @@ handlers._checkout.post = async (data, callback) => {
                       if (!err && receiptData) {
                         // Add email receipt id to orderDetails for archiving
                         orderDetails.receiptId = receiptData.id;
-                        console.log(orderDetails);
 
                         // move all orders to past order archive, include email id in archive
                         _cart.archiveOrders(userData, orderDetails, (err) => {
@@ -798,7 +782,6 @@ handlers._checkout.post = async (data, callback) => {
                   }
                 });
               } else {
-                console.log(err);
               }
             });
           } else {

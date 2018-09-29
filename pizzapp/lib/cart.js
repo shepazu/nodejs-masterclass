@@ -12,7 +12,6 @@ const url = require(`url`);
 const util = require(`util`);
 const helpers = require(`./helpers`);
 const _data = require(`./data`);
-const _logs = require(`./logs`);
 const _menu = require(`./menu`);
 
 // Instantiating the cart module object
@@ -42,12 +41,10 @@ cart.compileCart = async (orders, callback) => {
 
             // when all orders have been processed, call back the total price and summaries
             if (++o === o_len) {
-              // console.log(cartData);
               callback(false, cartData);
             }
           } else {
             callback({error: `could not validate one of the orders' data: ${order}`});
-            // console.log(err);
           }
         });
       } else {
@@ -60,7 +57,6 @@ cart.compileCart = async (orders, callback) => {
 
 // Sanity-order the order data
 cart.validateOrderData = async (orderData, userEmail, callback) => {
-  // orderData.email = userEmail === helpers.validateEmail(orderData.email) ? helpers.validateEmail(orderData.email) : null;
   orderData = typeof(orderData) ===`object` && orderData !== null ? orderData : {};
   orderData.email = helpers.validateEmail(orderData.email);
   orderData.id = typeof(orderData.id) === `string` && orderData.id.trim().length === 20 ? orderData.id.trim() : null;
@@ -79,7 +75,6 @@ cart.validateOrderData = async (orderData, userEmail, callback) => {
         callback(false, orderCartData);
       } else {
         callback({error: `one of the orders could not be processed`});
-        console.log(err);
       }
     });
   } else {
@@ -160,15 +155,6 @@ cart.processCart = async (orders, callback) => {
 
   // Execute all of the orders immediately
   await cart.compileCart(orders, callback);
-
-  // // Call the loop so the orders will execute periodically, to keep the server process alive
-  // cart.loop();
-
-  // // Compress all the logs immediately
-  // cart.rotateLogs();
-
-  // // Call the compression loop to schedule later compression of the logs
-  // cart.logRotationLoop();
 };
 
 

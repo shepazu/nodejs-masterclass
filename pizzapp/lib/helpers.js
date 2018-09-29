@@ -8,9 +8,6 @@ const crypto = require(`crypto`);
 const querystring = require(`querystring`);
 const https = require(`https`);
 const config = require(`./config`);
-// const _data = require(`./data`);
-// const helpers = require(`./helpers`);
-// const path = require(`path`);
 
 // Container for the module (to be exported)
 const helpers = {};
@@ -62,24 +59,6 @@ helpers.createRandomString = (strLength) => {
 };
 
 
-
-// Add floating points for money
-helpers.addFloats = (vals) => {
-  return vals.reduce((a, b) => {
-    ((a * 10) + (b * 10)) / 10;
-  });
-};
-
-
-// Multiply floating points for money
-helpers.multiplyFloats = (vals) => {
-  return vals.reduce((a, b) => {
-    (((a * 10) * (b * 10)) / 10) //.toFixed;
-  });
-};
-
-
-
 // Validate email address
 helpers.validateEmail = (email) => {
   if (typeof(email) === `string`) {
@@ -96,10 +75,7 @@ helpers.validateEmail = (email) => {
 
 // Send an payment request via Stripe
 helpers.processPayment = async (email, orderDetails, callback) => {
-  // console.log(`processPayment`);
-  // // console.log(email, orderDetails);
   email = helpers.validateEmail(email);
-  // orderDetails = typeof(orderDetails) === `string` && orderDetails.trim().length > 0  && orderDetails.trim().length <= 1600 ? orderDetails.trim() : null;
 
   if (email && orderDetails){
     const stripePostData = querystring.stringify({
@@ -108,7 +84,6 @@ helpers.processPayment = async (email, orderDetails, callback) => {
       description: `Pizzapp charges for order# ${orderDetails.id}`,
       source: orderDetails.customerData.creditCard.auth //`tok_visa`
     });
-      // source: orderDetails.creditCard
 
     const stripeOptions = {
       protocol: `https:`,
@@ -122,11 +97,9 @@ helpers.processPayment = async (email, orderDetails, callback) => {
         'Authorization': `Bearer ${config.stripe.secret}`
       }
     };
-    // console.log(stripePostData, stripeOptions);
 
     // send request to Stripe, pass outcome back to processor
     const res = await helpers.remoteAPIRequest(stripeOptions, stripePostData);
-    // console.log(res);
     callback(false, res);
   } else {
     callback({error: `Missing required fields`});
@@ -137,7 +110,7 @@ helpers.processPayment = async (email, orderDetails, callback) => {
 // Send an payment request via Stripe
 helpers.sendReceiptEmail = async (email, orderDetails, callback) => {
   email = helpers.validateEmail(email);
-  // orderDetails = typeof(orderDetails) === `string` && orderDetails.trim().length > 0  && orderDetails.trim().length <= 1600 ? orderDetails.trim() : null;
+  orderDetails = typeof(userData.orders) === `object` && orderDetails.id && orderDetails.summary && orderDetails.customerData && orderDetails.customerData.creditCard && orderDetails.customerData.creditCard.number ? orderDetails : null;
 
   if (email && orderDetails){
     // notify user
@@ -164,7 +137,6 @@ helpers.sendReceiptEmail = async (email, orderDetails, callback) => {
 
     // send request to MailGun, pass outcome back to processor
     const mailStatus = await helpers.remoteAPIRequest(mailgunOptions, mailgunPostData);
-    // console.log(mailStatus);
     callback(false, mailStatus);
   } else {
     callback({error: `Missing required fields`});
@@ -182,7 +154,6 @@ helpers.remoteAPIRequest = async (options, postData)  => {
         response = chunk;
       });
       res.on('end', () => {
-        // console.log(typeof response);
         try {
           resolve(JSON.parse(response));
         } catch (err) {
@@ -192,7 +163,6 @@ helpers.remoteAPIRequest = async (options, postData)  => {
     });
 
     req.on('error', (e) => {
-      // console.log(e);
       reject(formatResponse(400, `problem with request: ${e.message}`));
     });
 

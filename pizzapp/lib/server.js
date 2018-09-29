@@ -3,7 +3,6 @@
 *
 */
 
-// console.log("Uup?");
 
 // Dependencies
 const http = require(`http`);
@@ -65,7 +64,6 @@ server.unifiedServer = (req, res, port) => {
   req.on(`data`, (data) => {
     buffer += decoder.write(data);
     i++;
-    // debug(`Request received with this payload: «${buffer}». (${i})`);
   });
   req.on(`end`, () => {
     buffer += decoder.end();
@@ -99,14 +97,6 @@ server.unifiedServer = (req, res, port) => {
       res.writeHead(statusCode);
       res.end(payloadStr);
 
-      // res.end("Uup?\n");
-
-      // Log the request path
-      // debug(`Full path: ${path}`);
-      // debug(`Request received on path: ${trimPath}, with method: ${method}, and with query string parameters:`, queryStrObj);
-      // debug(`Request received with these headers:`, headersObj);
-      // debug(`Request received with this payload: «${buffer}»`);
-
       // If the response is 200, print green, otherwise print red
       let msgFormat = `\x1b[31m%s\x1b[0m`;
       if (statusCode === 200) {
@@ -139,7 +129,6 @@ server.init = () => {
   server.httpsServer.listen(config.httpsPort, () => {
     console.log(`\x1b[35m%s\x1b[0m`, `The server is listening on port ${config.httpsPort} in ${config.envName} mode over HTTPS`);
   });
-
 };
 
 
