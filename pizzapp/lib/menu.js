@@ -1,5 +1,5 @@
 /*
-* Library for storing and rotating logs
+* Library for storing and serving menu
 *
 */
 
@@ -108,16 +108,6 @@ lib.calculatePrice = async (orderData, callback) => {
         const toppingPrice = orderData.toppings.length * perTopping;
         const pizzaPrice = basePrice + toppingPrice;
         const totalPrice = (pizzaPrice * orderData.count) / 100;
-
-        // get base prices
-        // const pizza = menu.pizzas[orderData.size];
-        // const basePrice = +pizza.price.replace(`$`,``);
-        // const perTopping = +pizza.toppings.replace(`$`,``);
-        //
-        // // calculate total prices
-        // const toppingPrice = helpers.multiplyFloats([perTopping, orderData.toppings.length]);
-        // const pizzaPrice = helpers.addFloats([basePrice, toppingPrice]);
-        // const totalPrice = helpers.multiplyFloats([pizzaPrice, orderData.count]);
 
         callback(false, totalPrice);
       } else {

@@ -8,9 +8,6 @@ const crypto = require(`crypto`);
 const querystring = require(`querystring`);
 const https = require(`https`);
 const config = require(`./config`);
-// const _data = require(`./data`);
-// const helpers = require(`./helpers`);
-// const path = require(`path`);
 
 // Container for the module (to be exported)
 const helpers = {};
@@ -62,24 +59,6 @@ helpers.createRandomString = (strLength) => {
 };
 
 
-
-// Add floating points for money
-helpers.addFloats = (vals) => {
-  return vals.reduce((a, b) => {
-    ((a * 10) + (b * 10)) / 10;
-  });
-};
-
-
-// Multiply floating points for money
-helpers.multiplyFloats = (vals) => {
-  return vals.reduce((a, b) => {
-    (((a * 10) * (b * 10)) / 10) //.toFixed;
-  });
-};
-
-
-
 // Validate email address
 helpers.validateEmail = (email) => {
   if (typeof(email) === `string`) {
@@ -96,37 +75,31 @@ helpers.validateEmail = (email) => {
 
 // Send an payment request via Stripe
 helpers.processPayment = async (email, orderDetails, callback) => {
-  // console.log(`processPayment`);
-  // // console.log(email, orderDetails);
   email = helpers.validateEmail(email);
-  // orderDetails = typeof(orderDetails) === `string` && orderDetails.trim().length > 0  && orderDetails.trim().length <= 1600 ? orderDetails.trim() : null;
 
   if (email && orderDetails){
     const stripePostData = querystring.stringify({
-      currency: 'usd',
+      currency: `usd`,
       amount: orderDetails.charge * 100, // amount in cents
       description: `Pizzapp charges for order# ${orderDetails.id}`,
       source: orderDetails.customerData.creditCard.auth //`tok_visa`
     });
-      // source: orderDetails.creditCard
 
     const stripeOptions = {
-      protocol: 'https:',
-      hostname: 'api.stripe.com',
+      protocol: `https:`,
+      hostname: `api.stripe.com`,
       port: 443,
-      path: '/v1/charges',
-      method: 'POST',
+      path: `/v1/charges`,
+      method: `POST`,
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': `application/x-www-form-urlencoded`,
         'Content-Length': Buffer.byteLength(stripePostData),
-        'Authorization': 'Bearer '+ config.stripe.secret
+        'Authorization': `Bearer ${config.stripe.secret}`
       }
     };
-    // console.log(stripePostData, stripeOptions);
 
     // send request to Stripe, pass outcome back to processor
     const res = await helpers.remoteAPIRequest(stripeOptions, stripePostData);
-    // console.log(res);
     callback(false, res);
   } else {
     callback({error: `Missing required fields`});
@@ -137,12 +110,12 @@ helpers.processPayment = async (email, orderDetails, callback) => {
 // Send an payment request via Stripe
 helpers.sendReceiptEmail = async (email, orderDetails, callback) => {
   email = helpers.validateEmail(email);
-  // orderDetails = typeof(orderDetails) === `string` && orderDetails.trim().length > 0  && orderDetails.trim().length <= 1600 ? orderDetails.trim() : null;
+  orderDetails = typeof(userData.orders) === `object` && orderDetails.id && orderDetails.summary && orderDetails.customerData && orderDetails.customerData.creditCard && orderDetails.customerData.creditCard.number ? orderDetails : null;
 
   if (email && orderDetails){
     // notify user
     const mailgunPostData = querystring.stringify({
-      from: 'Pizzapp <fizz@samples.mailgun.org>',
+      from: `Pizzapp <fizz@samples.mailgun.org>`,
       to: email,
       subject: `Receipt for the orderId ${orderDetails.id}`,
       text: `Thank you for ordering from Pizzapp!\n\n${orderDetails.summary}\n\nYour order has been paid with credit card ending in ${orderDetails.customerData.creditCard.number.slice(-4)}.`
@@ -153,18 +126,17 @@ helpers.sendReceiptEmail = async (email, orderDetails, callback) => {
       hostname: config.mailgun.apiHostName,
       port: 443,
       path: config.mailgun.apiPath,
-      method: 'POST',
-      auth: 'api:'+ config.mailgun.apiKey,
+      method: `POST`,
+      auth: `api:${config.mailgun.apiKey}`,
       retry: 1,
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': `application/x-www-form-urlencoded`,
         'Content-Length': Buffer.byteLength(mailgunPostData),
       }
     };
 
     // send request to MailGun, pass outcome back to processor
     const mailStatus = await helpers.remoteAPIRequest(mailgunOptions, mailgunPostData);
-    // console.log(mailStatus);
     callback(false, mailStatus);
   } else {
     callback({error: `Missing required fields`});
@@ -172,115 +144,6 @@ helpers.sendReceiptEmail = async (email, orderDetails, callback) => {
 }
 
 
-
-
-// Send an payment request via Stripe
-helpers.processPayment_old = async (email, orderTotal, callback) => {
-  // console.log(`processPayment`);
-  return(false, {});
-  // return Promise.resolve(false, {});
-  return new Promise( (resolve, reject) => {
-    try {
-      resolve(false, {});
-    } catch (err) {
-      resolve(400);
-    }
-  });
-
-
-
-
-  // return new Promise((resolve, reject)=>{
-  //       request( `http://www.omdbapi.com/?t=${movieTitle}`, (error, res, movieData)=>{
-  //           if (error) reject(error);
-  //           else resolve(movieData);
-  //       });
-  //   });
-  // callback(false, {});
-// return new Promise ( (reslove, reject) = > { ... } )
-  // return;
-
-/*
-  // notify user
-  const mailgunPostData = querystring.stringify({
-    from: 'Pizzapp <fizz@samples.mailgun.org>',
-    to: email,
-    subject: 'Receipt for the orderId ',
-    text: 'Your order has been paid'
-  });
-  const mailgunOptions = {
-    protocol: config.mailgun.apiProtocol,
-    hostname: config.mailgun.apiHostName,
-    port: 443,
-    path: config.mailgun.apiPath,
-    method: 'POST',
-    auth: 'api:'+ config.mailgun.apiKey,
-    retry: 1,
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Content-Length': Buffer.byteLength(mailgunPostData),
-    }
-  };
-
-  const mailStatus = await helpers.remoteAPIRequest(mailgunOptions, mailgunPostData);
-  // console.log(mailStatus);
-  */
-  // phone = typeof(phone) === `string` && phone.trim().length === 10 ? phone.trim() : null;
-  // msg = typeof(msg) === `string` && msg.trim().length > 0  && msg.trim().length <= 1600 ? msg.trim() : null;
-  //
-  // if (phone && msg) {
-  //   // Configure the request payload
-  //   const payloadObj = {
-  //     'From': config.twilio.fromPhone,
-  //     'To': `+1${phone}`,
-  //     'Body': msg
-  //   };
-  //
-  //   // Stringify the request payload
-  //   let payloadStr = querystring.stringify(payloadObj);
-  //
-  //   // Configure the request details
-  //   const requestDetails = {
-  //     'protocol': `https:`,
-  //     'hostname': `api.twilio.com`,
-  //     'method': `POST`,
-  //     'path': `/2010-04-01/Accounts/${config.twilio.accountSid}/Messages.json`,
-  //     'auth': `${config.twilio.accountSid}:${config.twilio.authToken}`,
-  //     'headers': {
-  //       'Content-Type': `application/x-www-form-urlencoded`,
-  //       'Content-Length': Buffer.byteLength(payloadStr)
-  //     }
-  //   };
-  //
-  //   // console.log(payloadObj);
-  //   // console.log(requestDetails);
-  //
-  //   // Instantiate the request object
-  //   const req = https.request(requestDetails, (res) => {
-  //     // Grab the status of the sent request
-  //     const status = res.statusCode;
-  //     // Callback successfully if the reqest went through
-  //     if (status === 200 || status === 201) {
-  //       callback(false);
-  //     } else {
-  //       callback(`Status returned was ${status}`);
-  //     }
-  //   });
-  //
-  //   // Bind to the error event so it doesn't get thrown
-  //   req.on(`error`, (e) => {
-  //     callback(e);
-  //   });
-  //
-  //   // Add the payload
-  //   req.write(payloadStr);
-  //
-  //   // End the request
-  //   req.end();
-  // } else {
-  //   callback(`Given parameters were missing or invalid`);
-  // }
-}
 
 helpers.remoteAPIRequest = async (options, postData)  => {
   return new Promise((resolve, reject) => {
@@ -291,7 +154,6 @@ helpers.remoteAPIRequest = async (options, postData)  => {
         response = chunk;
       });
       res.on('end', () => {
-        // console.log(typeof response);
         try {
           resolve(JSON.parse(response));
         } catch (err) {
@@ -301,7 +163,6 @@ helpers.remoteAPIRequest = async (options, postData)  => {
     });
 
     req.on('error', (e) => {
-      // console.log(e);
       reject(formatResponse(400, `problem with request: ${e.message}`));
     });
 
